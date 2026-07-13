@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <title>Tavarakauppa - Hallinta</title>
+    <style>
+        body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { background: #1e1e1e; padding: 25px; border-radius: 12px; width: 100%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; }
+        h1 { text-align: center; color: #bb86fc; }
+        input, textarea { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #333; background: #2c2c2c; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #6200ea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; }
+        .tuote-kortti { background: #2c2c2c; padding: 15px; margin-top: 15px; border-radius: 8px; border-left: 4px solid #6200ea; }
+        .loppu { border-left-color: #cf6679; }
+        .varastossa { color: #03dac6; font-size: 0.9em; }
+        .tunnisteet { font-size: 0.8em; color: #888; font-style: italic; }
+        .nappi-rivi { display: flex; gap: 5px; margin-top: 10px; }
+        .btn-small { width: auto; padding: 5px 10px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .tab-content { display: none; }
+        .active-tab { display: block; }
+        .nav-btn { background: #333; margin-bottom: 10px; }
+        #kuittiAlue { background: #fff; color: #000; padding: 15px; border-radius: 8px; margin-top: 20px; font-family: 'Courier New', monospace; white-space: pre-wrap; border: 2px dashed #6200ea; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div style="display:flex; gap:10px;">
+            <button class="nav-btn" onclick="vaihdaTab('varasto-osio')">Varasto</button>
+            <button class="nav-btn" onclick="vaihdaTab('kassa-osio')">Kassa</button>
+        </div>
+    </div>
+
+    <!-- VARASTO-OSIO -->
+    <div id="varasto-osio" class="tab-content active-tab" style="width:100%; max-width:450px;">
+        <div class="container" id="lomakeAlue">
+            <h1 id="lomakeOtsikko">📦 Lisää tuote</h1>
+            <input type="hidden" id="muokkausId">
+            <input type="text" id="nimi" placeholder="Tuotteen nimi">
+            <input type="text" id="numero" placeholder="Numero (esim. 001)">
+            <input type="text" id="tunnisteet" placeholder="Tunnisteet (esim. kategoria)">
+            <textarea id="kuvaus" placeholder="Tuotekuvaus" rows="2"></textarea>
+            <input type="number" id="hinta" step="0.01" placeholder="Hinta (€)">
+            <input type="number" id="maara" placeholder="Määrä varastossa">
+            <button id="tallennaBtn">Tallenna tuote</button>
+            <button id="peruutaBtn" style="display:none; background:#444;" onclick="location.reload()">Peruuta muokkaus</button>
+        </div>
+
+        <div class="container">
+            <input type="text" id="haku" placeholder="🔍 Hae (nimi tai tunniste)...">
+        </div>
+        <div id="tuoteLista" style="width: 100%; max-width: 450px;"></div>
+    </div>
+
+    <!-- KASSA-OSIO -->
+    <div id="kassa-osio" class="tab-content" style="width:100%; max-width:450px;">
+        <div class="container">
+            <h1>Kassa</h1>
+            <input type="text" id="kassaNro" placeholder="Syötä tuotenumero...">
+            <button onclick="lisaaKoriin()">Lisää koriin</button>
+            <div id="ostoskori" style="margin-top:15px; border-bottom: 1px solid #444; padding-bottom:10px;"></div>
+            <h3 id="yhteensa">Yhteensä: 0.00 €</h3>
+            <input type="number" id="maksu" placeholder="Käteinen (€)">
+            <button onclick="suoritaTapahtuma()" style="background:#03dac6; color:black; font-size: 1.1em;">MAKSA JA TULOSTA KUITTI</button>
+            
+            <div id="kuittiAlue"></div>
+            <button id="kopioiBtn" style="display:none; background:#bb86fc; color:black; margin-top:10px;" onclick="kopioiKuitti()">📋 Kopioi kuitti leikepöydälle</button>
+        </div>
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+    const db = getFirestore(initializeApp({ apiKey: "AIzaSyCzjkcQFSYlJw-BKS7RatdXdCAxkh_9O9U", authDomain: "nallundaifirebase.firebaseapp.com", projectId: "nallundaifirebase", storageBucket: "nallundaifirebase.firebasestorage.app", messagingSenderId: "324623937766", appId: "1:324623937766:web:acde0ebc0237276fbe8b27" }));
+    const colRef = collection(db, "tuotteet");
+    let kaikkiTuotteet = [], ostoskori = [];
+
+    window.vaihdaTab = (id) => {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active-tab'));
+        document.getElementById(id).classList.add('active-tab');
+    };
+
+    window.lisaaKoriin = () => {
+        const nro = document.getElementById('kassaNro').value;
+        const tuote = kaikkiTuotteet.find(t => t.numero === nro);
+        if (tuote && tuote.maara > 0) {
+            ostoskori.push(tuote);
+            document.getElementById('ostoskori').innerHTML += `<div>${tuote.nimi} - ${tuote.hinta}€</div>`;
+            const summa = ostoskori.reduce((acc, t) => acc + parseFloat(t.hinta), 0);
+            document.getElementById('yhteensa').innerText = `Yhteensä: ${summa.toFixed(2)} €`;
+            document.getElementById('kassaNro').value = '';
+        } else { alert("Tuotetta ei löytynyt tai varasto on loppu!"); }
+    };
+
+    window.suoritaTapahtuma = async () => {
+        const summa = ostoskori.reduce((acc, t) => acc + parseFloat(t.hinta), 0);
+        const maksettu = parseFloat(document.getElementById('maksu').value);
+        if (maksettu < summa) { alert("Syötä riittävä summa!"); return; }
+
+        // Päivitä varasto
+        for (let t of ostoskori) {
+            await updateDoc(doc(db, "tuotteet", t.id), { maara: parseInt(t.maara) - 1 });
+        }
+
+        // Luo kuittiteksti
+        const nyt = new Date();
+        let kuitti = `--- TAVARAKIOSKI ---\n`;
+        kuitti += `Pvm: ${nyt.toLocaleDateString()}  Klo: ${nyt.toLocaleTimeString()}\n`;
+        kuitti += `--------------------\n`;
+        ostoskori.forEach(t => kuitti += `${t.nimi.padEnd(15)} ${t.hinta} €\n`);
+        kuitti += `--------------------\n`;
+        kuitti += `YHTEENSÄ: ${summa.toFixed(2)} €\n`;
+        kuitti += `MAKSETTU: ${maksettu.toFixed(2)} €\n`;
+        kuitti += `VAIHTO:   ${(maksettu - summa).toFixed(2)} €\n`;
+        kuitti += `--------------------\n`;
+        kuitti += `Kiitos ostoksesta!`;
+
+        document.getElementById('kuittiAlue').innerText = kuitti;
+        document.getElementById('kuittiAlue').style.display = 'block';
+        document.getElementById('kopioiBtn').style.display = 'block';
+
+        ostoskori = [];
+        document.getElementById('ostoskori').innerHTML = "";
+        document.getElementById('yhteensa').innerText = "Yhteensä: 0.00 €";
+        document.getElementById('maksu').value = "";
+    };
+
+    window.kopioiKuitti = () => {
+        const teksti = document.getElementById('kuittiAlue').innerText;
+        navigator.clipboard.writeText(teksti);
+        alert("Kuitti kopioitu leikepöydälle!");
+    };
+
+    onSnapshot(colRef, (snapshot) => {
+        kaikkiTuotteet = [];
+        const lista = document.getElementById('tuoteLista');
+        lista.innerHTML = '<h2>Varastotilanne</h2>';
+        snapshot.forEach((doc) => {
+            const t = { id: doc.id, ...doc.data() };
+            kaikkiTuotteet.push(t);
+            const div = document.createElement('div');
+            div.className = `tuote-kortti ${t.maara == 0 ? 'loppu' : ''}`;
+            div.innerHTML = `<div><strong>${t.numero || ''} ${t.nimi}</strong> - ${t.hinta}€</div>
+                <div class="varastossa">${t.maara > 0 ? 'Varastossa: ' + t.maara : 'LOPPU'}</div>
+                <div class="nappi-rivi">
+                    <button class="btn-small" onclick="muokkaaTuotetta('${t.id}', ${JSON.stringify(t).replace(/"/g, '&quot;')})">Muokkaa</button>
+                    <button class="btn-small" style="background:#cf6679" onclick="poistaTuote('${t.id}')">Poista</button>
+                </div>`;
+            lista.appendChild(div);
+        });
+    });
+
+    window.muokkaaTuotetta = (id, t) => {
+        document.getElementById('muokkausId').value = id;
+        document.getElementById('nimi').value = t.nimi;
+        document.getElementById('numero').value = t.numero;
+        document.getElementById('hinta').value = t.hinta;
+        document.getElementById('maara').value = t.maara;
+        document.getElementById('lomakeOtsikko').innerText = "Muokkaa tuotetta";
+        document.getElementById('tallennaBtn').innerText = "Päivitä tiedot";
+        document.getElementById('peruutaBtn').style.display = "block";
+    };
+
+    document.getElementById('tallennaBtn').onclick = async () => {
+        const id = document.getElementById('muokkausId').value;
+        const data = { nimi: nimi.value, numero: numero.value, hinta: hinta.value, maara: parseInt(maara.value || 0) };
+        if (id) await updateDoc(doc(db, "tuotteet", id), data);
+        else await addDoc(colRef, data);
+        location.reload();
+    };
+
+    window.poistaTuote = async (id) => { if(confirm("Poistetaanko tuote?")) await deleteDoc(doc(db, "tuotteet", id)); };
+</script>
+</body>
+</html>
