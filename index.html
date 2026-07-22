@@ -2,174 +2,271 @@
 <html lang="fi">
 <head>
     <meta charset="UTF-8">
-    <title>MONIAPU IISALMI KAUPPA - Hallinta</title>
+    <title>Palmun Palvelut</title>
     <style>
-        body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { background: #1e1e1e; padding: 25px; border-radius: 12px; width: 100%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; }
-        h1 { text-align: center; color: #bb86fc; }
-        input, textarea { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #333; background: #2c2c2c; color: white; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #6200ea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; }
-        .tuote-kortti { background: #2c2c2c; padding: 15px; margin-top: 15px; border-radius: 8px; border-left: 4px solid #6200ea; }
-        .loppu { border-left-color: #cf6679; }
-        .varastossa { color: #03dac6; font-size: 0.9em; }
-        .tunnisteet { font-size: 0.8em; color: #888; font-style: italic; }
-        .nappi-rivi { display: flex; gap: 5px; margin-top: 10px; }
-        .btn-small { width: auto; padding: 5px 10px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .tab-content { display: none; }
-        .active-tab { display: block; }
-        .nav-btn { background: #333; margin-bottom: 10px; }
-        #kuittiAlue { background: #fff; color: #000; padding: 15px; border-radius: 8px; margin-top: 20px; font-family: 'Courier New', monospace; white-space: pre-wrap; border: 2px dashed #6200ea; display: none; }
+        /* MÄÄRITELLÄÄN KOKO VÄRIPALETTI JA TYYLITELTY TEEMA */
+        :root {
+            --dark-green: #0a260d;
+            --grass-green: #2ecc71;
+            --leaf-green: #1b5e20;
+            --accent-green: #27ae60;
+            --text-light: #ffffff;
+            --card-bg: rgba(27, 94, 32, 0.4);
+        }
+
+        /* PERUSASETUKSET KOKO SIVULLE */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark-green);
+            color: var(--text-light);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* KÖYNNÖSREUNAT YLÄ- JA ALAREUNAAN (TÄYSI KORISTELU) */
+        body::before {
+            content: "🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            font-size: 2rem;
+            color: var(--grass-green);
+            opacity: 0.5;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        body::after {
+            content: "🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃 🌿 🍃";
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            font-size: 2rem;
+            color: var(--grass-green);
+            opacity: 0.5;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        /* NAVIGOINTI-OSIO */
+        nav {
+            background-color: rgba(10, 38, 13, 0.95);
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 3px solid var(--grass-green);
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        nav button {
+            background: transparent;
+            border: 2px solid var(--grass-green);
+            color: var(--text-light);
+            padding: 15px 35px;
+            margin: 0 15px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 25px 0 25px 0;
+            transition: all 0.4s ease;
+            text-transform: uppercase;
+        }
+
+        nav button:hover, nav button.active-nav-btn {
+            background-color: var(--grass-green);
+            color: var(--dark-green);
+            border-radius: 0 25px 0 25px;
+            box-shadow: 0 0 20px var(--grass-green);
+        }
+
+        /* SISÄLTÖALUEIDEN MÄÄRITTELY */
+        .tab-content {
+            display: none;
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto 50px auto;
+        }
+
+        .active-tab {
+            display: block;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            color: var(--grass-green);
+            text-align: center;
+            font-size: 4rem;
+            text-shadow: 3px 3px 6px #000;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            color: var(--text-light);
+            border-bottom: 3px solid var(--grass-green);
+            display: inline-block;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        /* INFO-LAATIKOT ETUSIVULLE */
+        .info-box {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px 0 20px 0;
+            border: 1px solid var(--grass-green);
+            margin-bottom: 30px;
+            line-height: 1.6;
+            font-size: 1.2rem;
+        }
+
+        /* HINNOITTELU-LAATIKKO */
+        .hinta-box {
+            background: linear-gradient(135deg, var(--leaf-green), var(--dark-green));
+            padding: 30px;
+            border-radius: 0 30px 0 30px;
+            border: 2px solid var(--grass-green);
+            margin-top: 30px;
+            font-size: 1.2rem;
+        }
+
+        /* PALVELUKORTTIEN RAKENNE */
+        .palvelu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .palvelu-item {
+            background: var(--card-bg);
+            border: 1px solid var(--grass-green);
+            padding: 25px;
+            border-radius: 15px 0 15px 0;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .palvelu-item:hover {
+            transform: scale(1.05);
+            background: var(--leaf-green);
+            border-color: #fff;
+        }
+
+        .icon {
+            font-size: 2rem;
+            margin-right: 20px;
+        }
+
+        /* YHTEYSTIEDOT-OSIO */
+        .yhteystiedot-box {
+            background: linear-gradient(135deg, var(--card-bg), var(--dark-green));
+            padding: 50px;
+            border-radius: 30px 0 30px 0;
+            border-left: 15px solid var(--grass-green);
+            font-size: 1.3rem;
+        }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div style="display:flex; gap:10px;">
-            <button class="nav-btn" onclick="vaihdaTab('varasto-osio')">Varasto</button>
-            <button class="nav-btn" onclick="vaihdaTab('kassa-osio')">Kassa</button>
+    <nav>
+        <button onclick="vaihdaTab('etusivu', this)">Etusivu</button>
+        <button onclick="vaihdaTab('palvelut', this)">Palvelut</button>
+        <button onclick="vaihdaTab('yhteystiedot', this)">Yhteystiedot</button>
+    </nav>
+
+    <!-- ETUSIVU -->
+    <div id="etusivu" class="tab-content active-tab">
+        <h1>Monitoimi-Apu Iisalmi</h1>
+        <p style="text-align: center; font-size: 1.8rem; font-style: italic;">Arjen helpottaja ja pihapiirin moniosaaja – luotettavaa palvelua Iisalmen alueella.</p>
+        
+        <div class="info-box">
+            <h2>Tietoa yrityksestämme</h2>
+            <p>Olemme Iisalmen alueella toimiva monitoimialan yritys, joka on perustettu halusta auttaa ihmisiä heidän arjen askareissaan. Meille mikään työ ei ole liian pieni, ja hoidamme jokaisen toimeksiannon ammattitaidolla, huolellisuudella ja suurella sydämellä.</p>
+            <p><strong>Arvomme:</strong> Luotettavuus, täsmällisyys ja asiakastyytyväisyys. Haluamme, että asiakkaamme voivat nauttia enemmän vapaa-ajastaan, kun me hoidamme kiinteistön ja pihan ylläpidon puolestasi.</p>
+        </div>
+
+        <div class="info-box">
+            <h2>Miksi valita meidät?</h2>
+            <p>Ymmärrämme, että jokaisen koti ja piha ovat erilaisia. Siksi räätälöimme palvelumme yksilöllisesti juuri sinun tarpeidesi mukaan. Olipa kyseessä säännöllinen nurmikon leikkuu tai kertaluonteinen raivausprojekti, käytössämme on asianmukaiset välineet ja aito halu tehdä työmme loistavasti. Luotettavuus on toimintamme peruskivi.</p>
         </div>
     </div>
 
-    <!-- VARASTO-OSIO -->
-    <div id="varasto-osio" class="tab-content active-tab" style="width:100%; max-width:450px;">
-        <div class="container" id="lomakeAlue">
-            <h1 id="lomakeOtsikko">📦 Lisää tuote</h1>
-            <input type="hidden" id="muokkausId">
-            <input type="text" id="nimi" placeholder="Tuotteen nimi">
-            <input type="text" id="numero" placeholder="Numero (esim. 001)">
-            <input type="text" id="tunnisteet" placeholder="Tunnisteet (esim. kategoria)">
-            <textarea id="kuvaus" placeholder="Tuotekuvaus" rows="2"></textarea>
-            <input type="number" id="hinta" step="0.01" placeholder="Hinta (€)">
-            <input type="number" id="maara" placeholder="Määrä varastossa">
-            <button id="tallennaBtn">Tallenna tuote</button>
-            <button id="peruutaBtn" style="display:none; background:#444;" onclick="location.reload()">Peruuta muokkaus</button>
+    <!-- PALVELUT-OSIO JA HINNOITTELU -->
+    <div id="palvelut" class="tab-content">
+        <h2>Palvelumme</h2>
+        <div class="palvelu-grid">
+            <div class="palvelu-item"><span class="icon">🚜</span> Nurmikon leikkuu</div>
+            <div class="palvelu-item"><span class="icon">🍂</span> Lehtien haravointi</div>
+            <div class="palvelu-item"><span class="icon">❄️</span> Lumityöt ja Hiekoitus</div>
+            <div class="palvelu-item"><span class="icon">🗑️</span> Roskien vienti ja kierrätysapu</div>
+            <div class="palvelu-item"><span class="icon">🌿</span> Luonnontuotteiden keräys</div>
+            <div class="palvelu-item"><span class="icon">🖌️</span> Terassien öljyäminen</div>
+            <div class="palvelu-item"><span class="icon">🌸</span> Kukkien ja istutusten hoito</div>
+            <div class="palvelu-item"><span class="icon">🪑</span> Pihakalusteiden kunnostus</div>
+            <div class="palvelu-item"><span class="icon">🧶</span> Mattojen ja tekstiilien tamppaus</div>
+            <div class="palvelu-item"><span class="icon">🎨</span> Maalaustyöt</div>
+     
+            <div class="palvelu-item"><span class="icon">✨</span> Kausikoristelu</div>
         </div>
 
-        <div class="container">
-            <input type="text" id="haku" placeholder="🔍 Hae (nimi tai tunniste)...">
+        <div class="hinta-box">
+            <h3>Hinnoittelu ja maksu</h3>
+            <p>Toimimme <strong>urakkapalkalla</strong>. Hinta on tapauskohtainen ja siihen vaikuttavat työn rasittavuus, kohteen laajuus sekä sijainti.</p>
+            <p><strong>Maksu tapahtuu vasta, kun työ on tehty.</strong> Näin voit olla varma, että saat tilaamasi palvelun laadukkaasti valmiiksi asti.</p>
+            <p><em>Ota yhteyttä, niin teemme sinulle reilun tarjouksen!</em></p>
         </div>
-        <div id="tuoteLista" style="width: 100%; max-width: 450px;"></div>
     </div>
 
-    <!-- KASSA-OSIO -->
-    <div id="kassa-osio" class="tab-content" style="width:100%; max-width:450px;">
-        <div class="container">
-            <h1>Kassa</h1>
-            <input type="text" id="kassaNro" placeholder="Syötä tuotenumero...">
-            <button onclick="lisaaKoriin()">Lisää koriin</button>
-            <div id="ostoskori" style="margin-top:15px; border-bottom: 1px solid #444; padding-bottom:10px;"></div>
-            <h3 id="yhteensa">Yhteensä: 0.00 €</h3>
-            <input type="number" id="maksu" placeholder="Käteinen (€)">
-            <button onclick="suoritaTapahtuma()" style="background:#03dac6; color:black; font-size: 1.1em;">MAKSA JA TULOSTA KUITTI</button>
+    <!-- YHTEYSTIEDOT-OSIO -->
+    <div id="yhteystiedot" class="tab-content">
+        <h2>Ota yhteyttä</h2>
+        <div class="yhteystiedot-box">
+            <p><strong>Puhelin:</strong> 040 123 4567</p>
+            <p><strong>Sähköposti:</strong> info@monitoimiapuiisalmi.fi</p>
+            <p><strong>Toimialue:</strong> Iisalmi ja lähialueet</p>
+            <p><em>Soita tai lähetä sähköpostia – sovitaan sopiva aika avulle!</em></p>
+        </div>
+    </div>
+
+    <!-- FIREBASE-ALUSTUS JA TAB-LOGIIKKA -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getFirestore, collection } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCzjkcQFSYlJw-BKS7RatdXdCAxkh_9O9U",
+            authDomain: "nallundaifirebase.firebaseapp.com",
+            projectId: "nallundaifirebase",
+            storageBucket: "nallundaifirebase.firebasestorage.app",
+            messagingSenderId: "324623937766",
+            appId: "1:324623937766:web:acde0ebc0237276fbe8b27"
+        };
+
+        const db = getFirestore(initializeApp(firebaseConfig));
+        
+        window.vaihdaTab = (id, btn) => {
+            const kaikkiSisallot = document.querySelectorAll('.tab-content');
+            const kaikkiNapit = document.querySelectorAll('nav button');
             
-            <div id="kuittiAlue"></div>
-            <button id="kopioiBtn" style="display:none; background:#bb86fc; color:black; margin-top:10px;" onclick="kopioiKuitti()">📋 Kopioi kuitti leikepöydälle</button>
-        </div>
-    </div>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
-
-    const db = getFirestore(initializeApp({ apiKey: "AIzaSyCzjkcQFSYlJw-BKS7RatdXdCAxkh_9O9U", authDomain: "nallundaifirebase.firebaseapp.com", projectId: "nallundaifirebase", storageBucket: "nallundaifirebase.firebasestorage.app", messagingSenderId: "324623937766", appId: "1:324623937766:web:acde0ebc0237276fbe8b27" }));
-    const colRef = collection(db, "tuotteet");
-    let kaikkiTuotteet = [], ostoskori = [];
-
-    window.vaihdaTab = (id) => {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active-tab'));
-        document.getElementById(id).classList.add('active-tab');
-    };
-
-    window.lisaaKoriin = () => {
-        const nro = document.getElementById('kassaNro').value;
-        const tuote = kaikkiTuotteet.find(t => t.numero === nro);
-        if (tuote && tuote.maara > 0) {
-            ostoskori.push(tuote);
-            document.getElementById('ostoskori').innerHTML += `<div>${tuote.nimi} - ${tuote.hinta}€</div>`;
-            const summa = ostoskori.reduce((acc, t) => acc + parseFloat(t.hinta), 0);
-            document.getElementById('yhteensa').innerText = `Yhteensä: ${summa.toFixed(2)} €`;
-            document.getElementById('kassaNro').value = '';
-        } else { alert("Tuotetta ei löytynyt tai varasto on loppu!"); }
-    };
-
-    window.suoritaTapahtuma = async () => {
-        const summa = ostoskori.reduce((acc, t) => acc + parseFloat(t.hinta), 0);
-        const maksettu = parseFloat(document.getElementById('maksu').value);
-        if (maksettu < summa) { alert("Syötä riittävä summa!"); return; }
-
-        // Päivitä varasto
-        for (let t of ostoskori) {
-            await updateDoc(doc(db, "tuotteet", t.id), { maara: parseInt(t.maara) - 1 });
-        }
-
-        // Luo kuittiteksti
-        const nyt = new Date();
-        let kuitti = `--- TAVARAKIOSKI ---\n`;
-        kuitti += `Pvm: ${nyt.toLocaleDateString()}  Klo: ${nyt.toLocaleTimeString()}\n`;
-        kuitti += `--------------------\n`;
-        ostoskori.forEach(t => kuitti += `${t.nimi.padEnd(15)} ${t.hinta} €\n`);
-        kuitti += `--------------------\n`;
-        kuitti += `YHTEENSÄ: ${summa.toFixed(2)} €\n`;
-        kuitti += `MAKSETTU: ${maksettu.toFixed(2)} €\n`;
-        kuitti += `VAIHTO:   ${(maksettu - summa).toFixed(2)} €\n`;
-        kuitti += `--------------------\n`;
-        kuitti += `Kiitos ostoksesta!`;
-
-        document.getElementById('kuittiAlue').innerText = kuitti;
-        document.getElementById('kuittiAlue').style.display = 'block';
-        document.getElementById('kopioiBtn').style.display = 'block';
-
-        ostoskori = [];
-        document.getElementById('ostoskori').innerHTML = "";
-        document.getElementById('yhteensa').innerText = "Yhteensä: 0.00 €";
-        document.getElementById('maksu').value = "";
-    };
-
-    window.kopioiKuitti = () => {
-        const teksti = document.getElementById('kuittiAlue').innerText;
-        navigator.clipboard.writeText(teksti);
-        alert("Kuitti kopioitu leikepöydälle!");
-    };
-
-    onSnapshot(colRef, (snapshot) => {
-        kaikkiTuotteet = [];
-        const lista = document.getElementById('tuoteLista');
-        lista.innerHTML = '<h2>Varastotilanne</h2>';
-        snapshot.forEach((doc) => {
-            const t = { id: doc.id, ...doc.data() };
-            kaikkiTuotteet.push(t);
-            const div = document.createElement('div');
-            div.className = `tuote-kortti ${t.maara == 0 ? 'loppu' : ''}`;
-            div.innerHTML = `<div><strong>${t.numero || ''} ${t.nimi}</strong> - ${t.hinta}€</div>
-                <div class="varastossa">${t.maara > 0 ? 'Varastossa: ' + t.maara : 'LOPPU'}</div>
-                <div class="nappi-rivi">
-                    <button class="btn-small" onclick="muokkaaTuotetta('${t.id}', ${JSON.stringify(t).replace(/"/g, '&quot;')})">Muokkaa</button>
-                    <button class="btn-small" style="background:#cf6679" onclick="poistaTuote('${t.id}')">Poista</button>
-                </div>`;
-            lista.appendChild(div);
-        });
-    });
-
-    window.muokkaaTuotetta = (id, t) => {
-        document.getElementById('muokkausId').value = id;
-        document.getElementById('nimi').value = t.nimi;
-        document.getElementById('numero').value = t.numero;
-        document.getElementById('hinta').value = t.hinta;
-        document.getElementById('maara').value = t.maara;
-        document.getElementById('lomakeOtsikko').innerText = "Muokkaa tuotetta";
-        document.getElementById('tallennaBtn').innerText = "Päivitä tiedot";
-        document.getElementById('peruutaBtn').style.display = "block";
-    };
-
-    document.getElementById('tallennaBtn').onclick = async () => {
-        const id = document.getElementById('muokkausId').value;
-        const data = { nimi: nimi.value, numero: numero.value, hinta: hinta.value, maara: parseInt(maara.value || 0) };
-        if (id) await updateDoc(doc(db, "tuotteet", id), data);
-        else await addDoc(colRef, data);
-        location.reload();
-    };
-
-    window.poistaTuote = async (id) => { if(confirm("Poistetaanko tuote?")) await deleteDoc(doc(db, "tuotteet", id)); };
-</script>
+            kaikkiSisallot.forEach(t => t.classList.remove('active-tab'));
+            kaikkiNapit.forEach(b => b.classList.remove('active-nav-btn'));
+            
+            document.getElementById(id).classList.add('active-tab');
+            btn.classList.add('active-nav-btn');
+        };
+    </script>
 </body>
 </html>
